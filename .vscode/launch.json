@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Flutter (local backend)",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--dart-define=BACKEND_URL=http://192.168.3.6:8080"
+            ]
+        },
+        {
+            "name": "Flutter (production)",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                // Quando você tiver o backend no Google Cloud Run, colocará a URL aqui
+                // "--dart-define=BACKEND_URL=https://sua-url.a.run.app"
+            ]
+        }
+    ]
+}
