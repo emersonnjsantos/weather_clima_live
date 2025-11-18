@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/app_export.dart';
 import '../../services/notification_service.dart';
 import '../../widgets/app_drawer.dart';
+import './screens/weekly_overview_screen.dart';
 import './widgets/current_weather_widget.dart';
 import './widgets/weather_news_widget.dart';
 import './widgets/daily_forecast_widget.dart';
@@ -462,7 +463,19 @@ class _WeatherDashboardState extends State<WeatherDashboard>
                                 if (_currentWeather != null)
                                   CurrentWeatherWidget(
                                     weatherData: _convertWeatherDataToMap(
-                                        _currentWeather!),
+                                      _currentWeather!,
+                                    ),
+                                    onTap: () {
+                                      if (_currentWeather == null) return;
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => WeeklyOverviewScreen(
+                                            weatherData: _currentWeather!,
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   ),
                                 // Widget de notícias do clima
                                 WeatherNewsWidget(
