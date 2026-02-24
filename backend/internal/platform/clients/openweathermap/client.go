@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/weatherpro/backend/internal/core/domain"
@@ -12,6 +13,7 @@ import (
 const (
 	currentWeatherAPIURL = "https://api.openweathermap.org/data/2.5/weather?lat=%f&lon=%f&appid=%s&units=metric&lang=pt_br"
 	forecastAPIURL       = "https://api.openweathermap.org/data/2.5/forecast?lat=%f&lon=%f&appid=%s&units=metric&lang=pt_br"
+	geocodingAPIURL      = "https://api.openweathermap.org/geo/1.0/direct?q=%s&limit=5&appid=%s"
 )
 
 // Estruturas de resposta para a API /weather
@@ -257,4 +259,47 @@ func convertToDaily(items []forecastItem) []domain.DailyForecast {
 		})
 	}
 	return dailyForecasts
+}
+
+// geocodingResponse representa um item da resposta da Geocoding API do OWM.
+type geocodingResponse struct {
+	Name    string  `json:"name"`
+	Country string  `json:"country"`
+	State   string  `json:"state"`
+	Lat     float64 `json:"lat"`
+	Lon     float64 `json:"lon"`
+}
+
+// SearchCities busca cidades pelo nome usando a Geocoding API do OWM.
+func (c *Client) SearchCities(query string) ([]domain.GeocodingResult, error) {
+	encodedQuery := url.QueryEscape(query)
+	geocodeURL := fmt.Sprintf(geocodingAPIURL, encodedQuery, c.apiKey)
+
+	resp, err := c.httpClient.Get(geocodeURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search cities: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("geocoding API returned status %d", resp.StatusCode)
+	}
+
+	var geoResults []geocodingResponse
+	if err := json.NewDecoder(resp.Body).Decode(&geoResults); err != nil {
+		return nil, fmt.Errorf("failed to decode geocoding response: %w", err)
+	}
+
+	results := make([]domain.GeocodingResult, len(geoResults))
+	for i, g := range geoResults {
+		results[i] = domain.GeocodingResult{
+			Name:    g.Name,
+			Country: g.Country,
+			State:   g.State,
+			Lat:     g.Lat,
+			Lon:     g.Lon,
+		}
+	}
+
+	return results, nil
 }

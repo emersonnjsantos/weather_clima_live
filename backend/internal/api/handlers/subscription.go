@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/google/uuid"
+	mw "github.com/weatherpro/backend/internal/api/middleware"
 	"github.com/weatherpro/backend/internal/core/domain"
 	"github.com/weatherpro/backend/internal/core/services"
 )
@@ -23,34 +23,42 @@ func NewSubscriptionHandler(service *services.SubscriptionService) *Subscription
 
 // GetSubscription obtém a assinatura de um usuário.
 func (h *SubscriptionHandler) GetSubscription(w http.ResponseWriter, r *http.Request) {
-	// TODO: Obter o ID do usuário a partir do contexto
-	userID := uuid.MustParse("00000000-0000-0000-0000-000000000001")
+	userID, ok := mw.GetUserID(r.Context())
+	if !ok {
+		mw.WriteError(w, http.StatusUnauthorized, "user not authenticated", nil)
+		return
+	}
 
-	sub, err := h.service.GetSubscriptionByUserID(r.Context(), userID)
+	subscription, err := h.service.GetSubscriptionByUserID(r.Context(), userID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		mw.WriteError(w, http.StatusInternalServerError, "failed to retrieve subscription", err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(sub); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := json.NewEncoder(w).Encode(subscription); err != nil {
+		mw.WriteError(w, http.StatusInternalServerError, "failed to encode response", err)
 	}
 }
 
 // UpdateSubscription atualiza a assinatura de um usuário.
 func (h *SubscriptionHandler) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
-	var sub domain.Subscription
-	if err := json.NewDecoder(r.Body).Decode(&sub); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	userID, ok := mw.GetUserID(r.Context())
+	if !ok {
+		mw.WriteError(w, http.StatusUnauthorized, "user not authenticated", nil)
 		return
 	}
 
-	// TODO: Obter o ID do usuário a partir do contexto
-	sub.UserID = uuid.MustParse("00000000-0000-0000-0000-000000000001")
+	var sub domain.Subscription
+	if err := json.NewDecoder(r.Body).Decode(&sub); err != nil {
+		mw.WriteError(w, http.StatusBadRequest, "invalid request body", err)
+		return
+	}
+
+	sub.UserID = userID
 
 	if err := h.service.UpdateSubscription(r.Context(), &sub); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		mw.WriteError(w, http.StatusInternalServerError, "failed to update subscription", err)
 		return
 	}
 

@@ -28,6 +28,9 @@ dependencies:
   share_plus: ^7.2.1
   hugeicons: ^0.0.7
   geocoding: ^4.0.0
+  flutter_riverpod: ^2.6.1
+  get_it: ^9.2.1
+  logger: ^2.6.2
 dev_dependencies: 
   flutter_test: 
     sdk: flutter

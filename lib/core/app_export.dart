@@ -7,3 +7,4 @@ export 'theme_manager.dart';
 export '../models/weather_models.dart';
 export '../services/weather_api_service.dart';
 export '../repositories/weather_repository.dart';
+export '../di/service_locator.dart';

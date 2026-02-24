@@ -1,25 +1,28 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import '../core/app_logger.dart';
 import '../models/weather_models.dart';
 import '../services/weather_api_service.dart';
 
 class WeatherRepository {
-  final WeatherApiService _apiService = WeatherApiService();
+  final WeatherApiService _apiService;
+  // Singleton: evita criar novo objeto Connectivity a cada chamada
+  final Connectivity _connectivity = Connectivity();
+
+  WeatherRepository({required WeatherApiService apiService})
+      : _apiService = apiService;
   static const String _cacheKeyPrefix = 'weather_cache_';
-  static const String _favoriteCitiesKey = 'favorite_cities';
   static const Duration _cacheExpiration = Duration(minutes: 30);
 
   // Obtém o clima atual por localização
   Future<WeatherData> getCurrentWeather(
       {double? lat, double? lon, String? cityName}) async {
-    print('===== getCurrentWeather called =====');
-    print('cityName: $cityName, lat: $lat, lon: $lon');
+    log.d('getCurrentWeather: cityName=$cityName, lat=$lat, lon=$lon');
 
-    final connectivity = await Connectivity().checkConnectivity();
+    final connectivity = await _connectivity.checkConnectivity();
 
     if (connectivity == ConnectivityResult.none) {
-      // Tenta obter dados do cache
       final cachedData = await _getCachedWeatherData(cityName ?? '${lat}_$lon');
       if (cachedData != null) {
         return cachedData;
@@ -31,58 +34,61 @@ class WeatherRepository {
       WeatherData weatherData;
 
       if (lat != null && lon != null) {
-        print('Fetching weather by coordinates: $lat, $lon');
+        log.d('Fetching weather by coordinates: $lat, $lon');
         weatherData =
             await _apiService.getCurrentWeatherByCoordinates(lat, lon);
       } else if (cityName != null) {
-        print('Fetching weather by city: $cityName');
+        log.d('Fetching weather by city: $cityName');
         weatherData = await _apiService.getCurrentWeatherByCity(cityName);
-        print('Weather data received for $cityName: ${weatherData.location}');
+        log.d('Weather data received for $cityName: ${weatherData.location}');
       } else {
-        // Tentar obter localização atual do GPS com fallback para Curitiba
         try {
-          print('Tentando obter localização GPS...');
+          log.d('Tentando obter localização GPS...');
           final position = await _apiService.getCurrentLocation();
-          print(
+          log.d(
               'Localização GPS obtida: ${position.latitude}, ${position.longitude}');
           weatherData = await _apiService.getCurrentWeatherByCoordinates(
             position.latitude,
             position.longitude,
           );
-          print('Clima carregado para a localização GPS atual');
+          log.d('Clima carregado para a localização GPS atual');
         } catch (locationError) {
-          // Se falhar ao obter GPS (permissão negada, GPS desligado, etc), usar Curitiba como padrão
-          print('Falha ao obter GPS: $locationError');
-          print('Usando Curitiba como cidade padrão');
+          log.w(
+              'Falha ao obter GPS: $locationError. Usando Curitiba como padrão.');
           weatherData = await _apiService.getCurrentWeatherByCity('Curitiba');
         }
       }
 
-      // Armazena os dados no cache
-      print(
-          'DEBUG REPO: Before cache - hourly: ${weatherData.hourlyForecast.length}, daily: ${weatherData.dailyForecast.length}');
+      log.d(
+          'Cache: hourly=${weatherData.hourlyForecast.length}, daily=${weatherData.dailyForecast.length}');
       await _cacheWeatherData(cityName ?? '${lat}_$lon', weatherData);
-      print(
-          'DEBUG REPO: After cache - hourly: ${weatherData.hourlyForecast.length}, daily: ${weatherData.dailyForecast.length}');
-
-      print('Weather data successfully loaded and cached');
+      log.i('Weather data successfully loaded and cached');
       return weatherData;
     } catch (e) {
-      print('ERROR in getCurrentWeather: $e');
-      // Tenta obter dados do cache como fallback
+      log.e('Error in getCurrentWeather: $e');
       final cachedData = await _getCachedWeatherData(cityName ?? '${lat}_$lon');
       if (cachedData != null) {
-        print('Returning cached data as fallback');
+        log.i('Returning cached data as fallback');
         return cachedData;
       }
-      print('No cached data available, rethrowing error');
+      log.w('No cached data available, rethrowing error');
       rethrow;
     }
   }
 
-  // Busca cidades
+  // Obtém dados de clima para a localização atual (usado pelo provider)
+  Future<WeatherData> getWeatherForCurrentLocation() async {
+    return getCurrentWeather();
+  }
+
+  // Obtém dados de clima por coordenadas (usado pelo provider)
+  Future<WeatherData> getWeatherData(double lat, double lon) async {
+    return getCurrentWeather(lat: lat, lon: lon);
+  }
+
+  // Busca cidades pelo nome (via backend)
   Future<List<CityWeather>> searchCities(String query) async {
-    final connectivity = await Connectivity().checkConnectivity();
+    final connectivity = await _connectivity.checkConnectivity();
 
     if (connectivity == ConnectivityResult.none) {
       throw Exception('No internet connection available for search');
@@ -91,62 +97,118 @@ class WeatherRepository {
     return await _apiService.searchCities(query);
   }
 
-  // Favorite cities management
-  Future<List<String>> getFavoriteCities() async {
-    final prefs = await SharedPreferences.getInstance();
-    final citiesJson = prefs.getStringList(_favoriteCitiesKey) ?? [];
-    return citiesJson;
-  }
+  // ── Cidades favoritas (armazenamento local) ────────────────────────
 
-  Future<void> addFavoriteCity(String cityName) async {
-    final prefs = await SharedPreferences.getInstance();
-    final cities = await getFavoriteCities();
+  static const String _favoritesKey = 'favorite_cities';
 
-    if (!cities.contains(cityName)) {
-      cities.add(cityName);
-      await prefs.setStringList(_favoriteCitiesKey, cities);
+  /// Obtém cidades favoritas do armazenamento local.
+  Future<List<Map<String, dynamic>>> getFavoriteCities() async {
+    final prefs = await SharedPreferences.getInstance();
+    final favJson = prefs.getString(_favoritesKey);
+    if (favJson == null) return [];
+    try {
+      final List<dynamic> decoded = jsonDecode(favJson);
+      return decoded.cast<Map<String, dynamic>>();
+    } catch (e) {
+      log.w('Erro ao ler favoritos locais: $e');
+      return [];
     }
   }
 
-  Future<void> removeFavoriteCity(String cityName) async {
-    final prefs = await SharedPreferences.getInstance();
-    final cities = await getFavoriteCities();
-    cities.remove(cityName);
-    await prefs.setStringList(_favoriteCitiesKey, cities);
+  /// Adiciona uma cidade favorita localmente.
+  Future<bool> addFavoriteCity({
+    required String cityName,
+    double lat = 0,
+    double lon = 0,
+    String countryCode = '',
+  }) async {
+    try {
+      final favorites = await getFavoriteCities();
+
+      // Evita duplicatas
+      if (favorites.any((c) => c['city_name'] == cityName)) {
+        return true;
+      }
+
+      favorites.add({
+        'id': DateTime.now().millisecondsSinceEpoch.toString(),
+        'city_name': cityName,
+        'lat': lat,
+        'lon': lon,
+        'country_code': countryCode,
+      });
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_favoritesKey, jsonEncode(favorites));
+      return true;
+    } catch (e) {
+      log.e('Erro ao adicionar favorito: $e');
+      return false;
+    }
   }
 
+  /// Remove uma cidade favorita localmente.
+  Future<bool> removeFavoriteCity(String id) async {
+    try {
+      final favorites = await getFavoriteCities();
+      favorites.removeWhere((c) => c['id'] == id || c['city_name'] == id);
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_favoritesKey, jsonEncode(favorites));
+      return true;
+    } catch (e) {
+      log.e('Erro ao remover favorito: $e');
+      return false;
+    }
+  }
+
+  /// Verifica se uma cidade é favorita.
   Future<bool> isFavoriteCity(String cityName) async {
     final cities = await getFavoriteCities();
-    return cities.contains(cityName);
+    return cities.any((c) => c['city_name'] == cityName);
   }
 
-  // Obtém o clima para várias cidades favoritas
+  /// Obtém o clima para as cidades favoritas em paralelo.
   Future<List<CityWeather>> getFavoriteCitiesWeather() async {
     final favoriteCities = await getFavoriteCities();
-    final List<CityWeather> citiesWeather = [];
 
-    for (String cityName in favoriteCities) {
-      try {
-        final weatherData = await getCurrentWeather(cityName: cityName);
-        citiesWeather.add(CityWeather(
-          name: weatherData.location,
-          country: '', // Will be filled from API response
-          lat: 0, // Will be filled from API response
-          lon: 0, // Will be filled from API response
-          temperature: weatherData.temperature,
-          condition: weatherData.condition,
-          icon: weatherData.icon,
-        ));
-      } catch (e) {
-        // Pula cidades que falharam ao carregar
-        continue;
-      }
-    }
+    // Future.wait paraleliza as N chamadas em vez de aguardar uma por uma
+    final results = await Future.wait(
+      favoriteCities.map((city) async {
+        final lat = (city['lat'] as num?)?.toDouble() ?? 0;
+        final lon = (city['lon'] as num?)?.toDouble() ?? 0;
+        final name = city['city_name'] as String? ?? '';
+        try {
+          final WeatherData weatherData;
+          if (lat != 0 && lon != 0) {
+            weatherData = await getCurrentWeather(lat: lat, lon: lon);
+          } else {
+            weatherData = await getCurrentWeather(cityName: name);
+          }
+          return CityWeather(
+            name: weatherData.location.isNotEmpty ? weatherData.location : name,
+            country: city['country_code'] ?? '',
+            lat: lat,
+            lon: lon,
+            temperature: weatherData.temperature,
+            condition: weatherData.condition,
+            icon: weatherData.icon,
+          );
+        } catch (e) {
+          log.w('Erro ao obter clima para favorito $name: $e');
+          return null;
+        }
+      }),
+    );
+
+    final List<CityWeather> citiesWeather =
+        results.whereType<CityWeather>().toList();
 
     return citiesWeather;
   }
 
-  // Gerenciamento de cache
+  // ── Gerenciamento de cache local (offline fallback) ────────────────
+
   Future<void> _cacheWeatherData(String key, WeatherData data) async {
     final prefs = await SharedPreferences.getInstance();
     final cacheData = {
@@ -217,14 +279,12 @@ class WeatherRepository {
       final timestamp =
           DateTime.fromMillisecondsSinceEpoch(cacheData['timestamp']);
 
-      // Verifica se o cache expirou
       if (DateTime.now().difference(timestamp) > _cacheExpiration) {
         return null;
       }
 
       final data = cacheData['data'];
 
-      // Parse hourly and daily from cache
       List<HourlyWeather> hourlyForecast = [];
       List<DailyWeather> dailyForecast = [];
 
@@ -246,7 +306,7 @@ class WeatherRepository {
         condition: data['condition'],
         description: data['description'],
         icon: data['icon'],
-        weatherId: data['weatherId'] ?? 800, // Default to clear sky
+        weatherId: data['weatherId'] ?? 800,
         location: data['location'],
         humidity: data['humidity'],
         windSpeed: data['windSpeed'].toDouble(),

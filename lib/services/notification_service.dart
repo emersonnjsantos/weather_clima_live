@@ -78,11 +78,10 @@ class NotificationService {
       'weather_updates',
       'Atualizações do Clima',
       channelDescription: 'Notificações com informações do clima atual',
-      importance: Importance.high,
-      priority: Priority.high,
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
       showWhen: true,
-      ongoing: true, // Notificação persistente
-      autoCancel: false,
+      // ongoing removido: não manter app ativo em background (economiza bateria)
       styleInformation: BigTextStyleInformation(''),
       icon: '@mipmap/ic_launcher',
     );

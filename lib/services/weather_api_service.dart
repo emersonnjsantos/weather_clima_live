@@ -1,155 +1,200 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart'; // Adicionado
+import '../core/app_logger.dart';
 import '../models/weather_models.dart';
 
+/// Serviço que chama a OpenWeatherMap API diretamente (sem backend).
+///
+/// Usa as APIs:
+///   - /data/2.5/weather  → clima atual
+///   - /data/2.5/forecast → previsão 5 dias / 3 horas
+///   - /geo/1.0/direct    → geocodificação (busca de cidades)
 class WeatherApiService {
-  static const String _baseUrl = String.fromEnvironment('BACKEND_URL',
-      defaultValue: 'http://localhost:8080' // Default for local development
-      );
+  static const String _owmBaseUrl = 'https://api.openweathermap.org';
 
   final Dio _dio = Dio();
+  String? _apiKey;
 
   WeatherApiService() {
-    _dio.options.baseUrl = _baseUrl;
     _dio.options.connectTimeout = const Duration(seconds: 10);
     _dio.options.receiveTimeout = const Duration(seconds: 10);
 
-    // Adiciona interceptor para logging
     _dio.interceptors.add(LogInterceptor(
       requestBody: false,
       responseBody: false,
       logPrint: (object) {
-        // Logging apenas em desenvolvimento
         if (!kReleaseMode) {
-          debugPrint('[API] $object');
+          debugPrint('[OWM] $object');
         }
       },
     ));
   }
 
-  // Obtém o clima atual por coordenadas
-  Future<WeatherData> getCurrentWeatherByCoordinates(
-      double lat, double lon) async {
-    try {
-      final response = await _dio.get(
-        '/weather',
-        queryParameters: {
-          'lat': lat,
-          'lon': lon,
-          // O backend Go lida com 'units' e 'lang'
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final weatherData = WeatherData.fromJson(response.data);
-
-        print(
-            'DEBUG SERVICE: Parsed weatherData - hourly: ${weatherData.hourlyForecast.length}, daily: ${weatherData.dailyForecast.length}');
-
-        // Retornar o weatherData já parseado com todas as previsões
-        return weatherData;
-      } else {
-        throw Exception('Failed to fetch weather data: ${response.statusCode}');
-      }
-    } on DioException catch (e) {
-      throw Exception('Network error: ${e.message}');
-    } catch (e) {
-      throw Exception('Unexpected error: $e');
+  /// Carrega a API key do env.json (lazy load, uma vez só).
+  Future<void> _ensureApiKey() async {
+    if (_apiKey != null) return;
+    final envJson = await rootBundle.loadString('env.json');
+    final env = json.decode(envJson);
+    _apiKey = env['OPENWEATHER_API_KEY'];
+    if (_apiKey == null || _apiKey!.isEmpty) {
+      throw Exception('OPENWEATHER_API_KEY não configurada em env.json');
     }
   }
 
-  // Obtém o clima atual pelo nome da cidade
+  // ── Clima atual por coordenadas ─────────────────────────────────────
+
+  Future<WeatherData> getCurrentWeatherByCoordinates(
+      double lat, double lon) async {
+    await _ensureApiKey();
+
+    try {
+      // 1. Buscar clima atual (/data/2.5/weather)
+      final currentResponse = await _dio.get(
+        '$_owmBaseUrl/data/2.5/weather',
+        queryParameters: {
+          'lat': lat,
+          'lon': lon,
+          'appid': _apiKey,
+          'units': 'metric',
+          'lang': 'pt_br',
+        },
+      );
+
+      if (currentResponse.statusCode != 200) {
+        throw Exception(
+            'Erro ao buscar clima: status ${currentResponse.statusCode}');
+      }
+
+      final currentData = currentResponse.data as Map<String, dynamic>;
+
+      // 2. Buscar previsão 5 dias (/data/2.5/forecast)
+      List<HourlyWeather> hourlyForecast = [];
+      List<DailyWeather> dailyForecast = [];
+
+      try {
+        final forecastResponse = await _dio.get(
+          '$_owmBaseUrl/data/2.5/forecast',
+          queryParameters: {
+            'lat': lat,
+            'lon': lon,
+            'appid': _apiKey,
+            'units': 'metric',
+            'lang': 'pt_br',
+          },
+        );
+
+        if (forecastResponse.statusCode == 200) {
+          final forecastData = forecastResponse.data as Map<String, dynamic>;
+          final List<dynamic> forecastList = forecastData['list'] ?? [];
+
+          // Converte primeiros 8 itens (24h) para previsão horária
+          hourlyForecast = _convertToHourly(forecastList);
+
+          // Agrupa por dia para previsão diária
+          dailyForecast = _convertToDaily(forecastList);
+        }
+      } catch (e) {
+        log.w('Previsão não disponível, usando apenas clima atual: $e');
+      }
+
+      // 3. Monta o WeatherData final
+      final weather = currentData['weather'][0];
+      return WeatherData(
+        temperature: (currentData['main']['temp'] as num).toDouble(),
+        feelsLike: (currentData['main']['feels_like'] as num).toDouble(),
+        condition: weather['main'],
+        description: weather['description'],
+        icon: weather['icon'],
+        weatherId: weather['id'],
+        location: currentData['name'] ?? '',
+        humidity: currentData['main']['humidity'],
+        windSpeed: (currentData['wind']['speed'] as num).toDouble(),
+        windDirection: currentData['wind']['deg'] ?? 0,
+        pressure: (currentData['main']['pressure'] as num).toDouble(),
+        visibility: (currentData['visibility'] as num).toDouble() / 1000, // km
+        uvIndex: 0, // API 2.5 gratuita não fornece UV
+        sunrise: DateTime.fromMillisecondsSinceEpoch(
+            currentData['sys']['sunrise'] * 1000),
+        sunset: DateTime.fromMillisecondsSinceEpoch(
+            currentData['sys']['sunset'] * 1000),
+        lastUpdated: DateTime.now(),
+        hourlyForecast: hourlyForecast,
+        dailyForecast: dailyForecast,
+      );
+    } on DioException catch (e) {
+      throw Exception('Erro de rede: ${e.message}');
+    } catch (e) {
+      throw Exception('Erro inesperado ao buscar clima: $e');
+    }
+  }
+
+  // ── Clima atual por nome da cidade ──────────────────────────────────
+
   Future<WeatherData> getCurrentWeatherByCity(String cityName) async {
     try {
-      List<Location> locations =
-          await GeocodingPlatform.instance!.locationFromAddress(cityName);
-      if (locations.isEmpty) {
-        throw Exception('Cidade não encontrada através da geocodificação.');
+      final cities = await searchCities(cityName);
+      if (cities.isEmpty) {
+        throw Exception('Cidade não encontrada: $cityName');
       }
-      // Pega a primeira localização encontrada
-      Location location = locations.first;
-      return await getCurrentWeatherByCoordinates(
-          location.latitude, location.longitude);
+      final city = cities.first;
+      return await getCurrentWeatherByCoordinates(city.lat, city.lon);
     } catch (e) {
       throw Exception('Erro ao obter clima por cidade: $e');
     }
   }
 
-  // Busca cidades pelo nome
+  // ── Busca de cidades (Geocoding API) ────────────────────────────────
+
   Future<List<CityWeather>> searchCities(String query) async {
+    await _ensureApiKey();
+
     try {
-      List<Location> locations =
-          await GeocodingPlatform.instance!.locationFromAddress(query);
-      if (locations.isEmpty) {
-        return []; // Nenhuma cidade encontrada
-      }
+      final response = await _dio.get(
+        '$_owmBaseUrl/geo/1.0/direct',
+        queryParameters: {
+          'q': query,
+          'limit': 5,
+          'appid': _apiKey,
+        },
+      );
 
-      List<CityWeather> results = [];
+      if (response.statusCode == 200) {
+        final List<dynamic> results = response.data;
+        List<CityWeather> cities = [];
 
-      // Limita a 5 resultados para não fazer muitas requisições
-      int maxResults = locations.length > 5 ? 5 : locations.length;
+        int maxResults = results.length > 5 ? 5 : results.length;
 
-      for (var i = 0; i < maxResults; i++) {
-        var loc = locations[i];
-
-        try {
-          // Faz a geocodificação reversa para obter os detalhes do local
-          List<Placemark> placemarks = await GeocodingPlatform.instance!
-              .placemarkFromCoordinates(loc.latitude, loc.longitude);
-
-          if (placemarks.isNotEmpty) {
-            Placemark place = placemarks.first;
-
-            // Debug para ver quais campos estão preenchidos
-            print(
-                'DEBUG PLACEMARK: locality=${place.locality}, subAdmin=${place.subAdministrativeArea}, admin=${place.administrativeArea}, country=${place.country}');
-
-            // Busca o clima atual dessa localização
+        for (var i = 0; i < maxResults; i++) {
+          final geo = results[i];
+          try {
             WeatherData weatherData = await getCurrentWeatherByCoordinates(
-                loc.latitude, loc.longitude);
+                (geo['lat'] as num).toDouble(), (geo['lon'] as num).toDouble());
 
-            // Determina o nome da cidade - PRIORIZA Placemark quando disponível
-            String cityName;
-            if (place.locality != null && place.locality!.isNotEmpty) {
-              cityName = place.locality!;
-            } else if (place.subAdministrativeArea != null &&
-                place.subAdministrativeArea!.isNotEmpty) {
-              cityName = place.subAdministrativeArea!;
-            } else if (place.administrativeArea != null &&
-                place.administrativeArea!.isNotEmpty) {
-              cityName = place.administrativeArea!;
-            } else if (weatherData.location.isNotEmpty) {
-              cityName = weatherData.location;
-            } else {
-              cityName = query;
-            }
-
-            print(
-                'DEBUG CITY NAME: Using "${cityName}" (locality="${place.locality}", subAdmin="${place.subAdministrativeArea}", backend="${weatherData.location}")');
-
-            results.add(CityWeather(
-              name: cityName,
-              country: place.country ?? '',
-              lat: loc.latitude,
-              lon: loc.longitude,
+            cities.add(CityWeather(
+              name: geo['name'] ?? query,
+              country: geo['country'] ?? '',
+              lat: (geo['lat'] as num).toDouble(),
+              lon: (geo['lon'] as num).toDouble(),
               temperature: weatherData.temperature,
               condition: weatherData.condition,
               icon: weatherData.icon,
             ));
+          } catch (e) {
+            log.w('Erro ao buscar clima para geocode result $i: $e');
+            continue;
           }
-        } catch (e) {
-          // Se falhar para uma cidade específica, continua para a próxima
-          print('Erro ao buscar clima para localização $i: $e');
-          continue;
         }
-      }
 
-      return results;
+        return cities;
+      } else {
+        return [];
+      }
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
-        return []; // City not found, return empty list
+        return [];
       }
       throw Exception('Erro de conexão: ${e.message}');
     } catch (e) {
@@ -157,25 +202,24 @@ class WeatherApiService {
     }
   }
 
-  // Obtém a URL do ícone de clima
+  // ── Ícone de clima ──────────────────────────────────────────────────
+
   String getWeatherIconUrl(String iconCode, {String size = '4x'}) {
-    // Esta URL ainda aponta para o OpenWeatherMap, pois o backend Go não serve ícones.
     return 'https://openweathermap.org/img/wn/$iconCode@$size.png';
   }
 
-  // Obtém a localização atual (ainda usa geolocator diretamente)
+  // ── Localização GPS ─────────────────────────────────────────────────
+
   Future<Position> getCurrentLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Verifica se o serviço de localização está habilitado
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       throw Exception(
           'GPS desabilitado. Por favor, ative a localização nas configurações do dispositivo.');
     }
 
-    // Verifica e solicita permissões
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -190,20 +234,103 @@ class WeatherApiService {
           'Permissão de localização negada permanentemente. Por favor, ative a permissão de localização nas configurações do dispositivo.');
     }
 
-    // Tenta obter a localização atual com configurações otimizadas
     try {
       return await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
         timeLimit: Duration(seconds: 10),
       );
     } catch (e) {
-      // Se falhar com alta precisão, tenta com precisão média
-      print(
+      log.w(
           'Falha ao obter localização com alta precisão, tentando com precisão média...');
       return await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.medium,
         timeLimit: Duration(seconds: 15),
       );
     }
+  }
+
+  // ── Conversão de previsão (replica lógica do backend Go) ────────────
+
+  /// Converte os primeiros 8 itens (24h) para previsão horária.
+  List<HourlyWeather> _convertToHourly(List<dynamic> forecastList) {
+    int count = forecastList.length > 8 ? 8 : forecastList.length;
+
+    return forecastList.take(count).map((item) {
+      final map = item as Map<String, dynamic>;
+      final weather = map['weather'][0];
+      return HourlyWeather(
+        time: DateTime.fromMillisecondsSinceEpoch(map['dt'] * 1000),
+        temperature: (map['main']['temp'] as num).toDouble(),
+        feelsLike: (map['main']['feels_like'] as num).toDouble(),
+        precipitation: ((map['pop'] ?? 0) * 100).toInt(),
+        icon: weather['icon'],
+        weatherId: weather['id'],
+        description: weather['description'],
+        windSpeed: (map['wind']['speed'] as num).toDouble(),
+        windGust: (map['wind']['gust'] as num?)?.toDouble() ??
+            (map['wind']['speed'] as num).toDouble(),
+        windDirection: map['wind']['deg'] ?? 0,
+      );
+    }).toList();
+  }
+
+  /// Agrupa os itens por dia para criar previsão diária.
+  List<DailyWeather> _convertToDaily(List<dynamic> forecastList) {
+    // Agrupa por data (YYYY-MM-DD)
+    final Map<String, List<Map<String, dynamic>>> grouped = {};
+    final List<String> orderedDates = [];
+
+    for (var item in forecastList) {
+      final map = item as Map<String, dynamic>;
+      final dt = DateTime.fromMillisecondsSinceEpoch(map['dt'] * 1000);
+      final dateKey =
+          '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+
+      if (!grouped.containsKey(dateKey)) {
+        grouped[dateKey] = [];
+        orderedDates.add(dateKey);
+      }
+      grouped[dateKey]!.add(map);
+    }
+
+    // Limita a 6 dias
+    int maxDays = orderedDates.length > 6 ? 6 : orderedDates.length;
+
+    return orderedDates
+        .take(maxDays)
+        .map((dateKey) {
+          final dayItems = grouped[dateKey]!;
+          if (dayItems.isEmpty) return null;
+
+          // Usa o item do meio como representativo
+          final representative = dayItems[dayItems.length ~/ 2];
+          double minTemp = (dayItems[0]['main']['temp_min'] as num).toDouble();
+          double maxTemp = (dayItems[0]['main']['temp_max'] as num).toDouble();
+          double pop = (dayItems[0]['pop'] as num?)?.toDouble() ?? 0;
+
+          for (var item in dayItems) {
+            final tempMin = (item['main']['temp_min'] as num).toDouble();
+            final tempMax = (item['main']['temp_max'] as num).toDouble();
+            final itemPop = (item['pop'] as num?)?.toDouble() ?? 0;
+
+            if (tempMin < minTemp) minTemp = tempMin;
+            if (tempMax > maxTemp) maxTemp = tempMax;
+            if (itemPop > pop) pop = itemPop;
+          }
+
+          final weather = representative['weather'][0];
+          return DailyWeather(
+            date: DateTime.fromMillisecondsSinceEpoch(
+                representative['dt'] * 1000),
+            high: maxTemp,
+            low: minTemp,
+            precipitation: (pop * 100).toInt(),
+            icon: weather['icon'],
+            weatherId: weather['id'],
+            description: weather['description'],
+          );
+        })
+        .whereType<DailyWeather>()
+        .toList();
   }
 }

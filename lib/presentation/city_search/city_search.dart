@@ -18,7 +18,7 @@ class CitySearch extends StatefulWidget {
 class _CitySearchState extends State<CitySearch> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-  final WeatherRepository _weatherRepository = WeatherRepository();
+  final WeatherRepository _weatherRepository = getIt<WeatherRepository>();
 
   bool _isLoading = false;
   bool _hasSearched = false;
@@ -166,7 +166,15 @@ class _CitySearchState extends State<CitySearch> {
       final isFavorite = await _weatherRepository.isFavoriteCity(city.name);
 
       if (isFavorite) {
-        await _weatherRepository.removeFavoriteCity(city.name);
+        // Busca o ID do favorito pelo nome para remover
+        final favorites = await _weatherRepository.getFavoriteCities();
+        final fav = favorites.firstWhere(
+          (c) => c['city_name'] == city.name,
+          orElse: () => {},
+        );
+        if (fav.isNotEmpty && fav['id'] != null) {
+          await _weatherRepository.removeFavoriteCity(fav['id'].toString());
+        }
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -177,7 +185,12 @@ class _CitySearchState extends State<CitySearch> {
           );
         }
       } else {
-        await _weatherRepository.addFavoriteCity(city.name);
+        await _weatherRepository.addFavoriteCity(
+          cityName: city.name,
+          lat: city.lat,
+          lon: city.lon,
+          countryCode: city.country,
+        );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

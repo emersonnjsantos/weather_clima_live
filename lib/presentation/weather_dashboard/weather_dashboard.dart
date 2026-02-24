@@ -24,20 +24,29 @@ class WeatherDashboard extends StatefulWidget {
 class _WeatherDashboardState extends State<WeatherDashboard>
     with TickerProviderStateMixin {
   late TabController _tabController;
-  final WeatherRepository _weatherRepository = WeatherRepository();
+  final WeatherRepository _weatherRepository = getIt<WeatherRepository>();
   final NotificationService _notificationService = NotificationService();
 
   bool _isLoading = true;
   String? _error;
 
   WeatherData? _currentWeather;
+  Map<String, dynamic>?
+      _currentWeatherMap; // cache do mapa para evitar recálculo no build
+  String _currentTime = '';
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _currentTime = _formatTime();
     _initializeNotifications();
     _loadInitialData();
+  }
+
+  String _formatTime() {
+    final now = DateTime.now();
+    return '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} ${_getDayOfWeek()}';
   }
 
   Future<void> _initializeNotifications() async {
@@ -58,10 +67,7 @@ class _WeatherDashboardState extends State<WeatherDashboard>
     });
 
     try {
-      // Clear cache to ensure fresh data
-      await _weatherRepository.clearCache();
-
-      // Load current weather
+      // Usa cache de 30 min do repositório — sem clearCache() aqui
       final weather = await _weatherRepository.getCurrentWeather();
 
       // Debug: Print weather data
@@ -75,6 +81,8 @@ class _WeatherDashboardState extends State<WeatherDashboard>
 
       setState(() {
         _currentWeather = weather;
+        _currentWeatherMap = _convertWeatherDataToMap(weather);
+        _currentTime = _formatTime();
         _isLoading = false;
       });
 
@@ -124,14 +132,15 @@ class _WeatherDashboardState extends State<WeatherDashboard>
 
   Future<void> _refreshWeatherData() async {
     try {
-      // Clear cache to force fresh data
+      // Força atualização limpando cache apenas aqui (pull-to-refresh explícito)
       await _weatherRepository.clearCache();
 
-      // Refresh current weather
       final weather = await _weatherRepository.getCurrentWeather();
 
       setState(() {
         _currentWeather = weather;
+        _currentWeatherMap = _convertWeatherDataToMap(weather);
+        _currentTime = _formatTime();
         _error = null;
       });
 
@@ -174,16 +183,15 @@ class _WeatherDashboardState extends State<WeatherDashboard>
     });
 
     try {
-      // Clear cache to ensure fresh data
-      await _weatherRepository.clearCache();
-
-      // Load weather for the selected city
+      // Busca cidade — cache por nome funciona normalmente (30 min)
       final weather = await _weatherRepository.getCurrentWeather(
         cityName: cityName,
       );
 
       setState(() {
         _currentWeather = weather;
+        _currentWeatherMap = _convertWeatherDataToMap(weather);
+        _currentTime = _formatTime();
         _isLoading = false;
       });
 
@@ -283,10 +291,10 @@ class _WeatherDashboardState extends State<WeatherDashboard>
                 padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.h),
                 child: Row(
                   children: [
-                    // Time
+                    // Time — calculado no setState, não durante o build
                     Flexible(
                       child: Text(
-                        '${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')} ${_getDayOfWeek()}',
+                        _currentTime,
                         style: TextStyle(
                           fontSize: 14.sp,
                           color: Colors.grey[600],
@@ -460,11 +468,10 @@ class _WeatherDashboardState extends State<WeatherDashboard>
                                     MediaQuery.of(context).padding.bottom + 2.h,
                               ),
                               children: [
-                                if (_currentWeather != null)
+                                if (_currentWeather != null &&
+                                    _currentWeatherMap != null)
                                   CurrentWeatherWidget(
-                                    weatherData: _convertWeatherDataToMap(
-                                      _currentWeather!,
-                                    ),
+                                    weatherData: _currentWeatherMap!,
                                     onTap: () {
                                       if (_currentWeather == null) return;
                                       Navigator.push(
@@ -543,7 +550,7 @@ class _WeatherDashboardState extends State<WeatherDashboard>
   }
 
   String _getDayOfWeek() {
-    final days = [
+    const days = [
       "Domingo",
       "Segunda-feira",
       "Terça-feira",

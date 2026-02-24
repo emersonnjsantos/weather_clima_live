@@ -4,6 +4,7 @@ import 'package:sizer/sizer.dart';
 import '../../repositories/weather_repository.dart';
 import '../../models/weather_models.dart';
 import '../../services/weather_api_service.dart';
+import '../../di/service_locator.dart';
 import 'widgets/summary_chart.dart';
 import 'widgets/rain_chart.dart';
 import 'widgets/temperature_chart.dart';
@@ -22,7 +23,7 @@ class HourlyChartScreen extends StatefulWidget {
 class _HourlyChartScreenState extends State<HourlyChartScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final WeatherRepository _weatherRepository = WeatherRepository();
+  final WeatherRepository _weatherRepository = getIt<WeatherRepository>();
   final WeatherApiService _weatherService = WeatherApiService();
 
   bool _isLoading = true;
