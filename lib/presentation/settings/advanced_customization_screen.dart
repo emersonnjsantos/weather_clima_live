@@ -179,7 +179,7 @@ class _AdvancedCustomizationScreenState
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -236,7 +236,7 @@ class _AdvancedCustomizationScreenState
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: const Color(0xFF1E88E5),
+            activeThumbColor: const Color(0xFF1E88E5),
           ),
         ],
       ),

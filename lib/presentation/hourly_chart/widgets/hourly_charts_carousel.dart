@@ -12,10 +12,10 @@ class HourlyChartsCarousel extends StatefulWidget {
   final WeatherApiService weatherService;
 
   const HourlyChartsCarousel({
-    Key? key,
+    super.key,
     required this.hourlyForecast,
     required this.weatherService,
-  }) : super(key: key);
+  });
 
   @override
   State<HourlyChartsCarousel> createState() => _HourlyChartsCarouselState();
@@ -58,7 +58,7 @@ class _HourlyChartsCarouselState extends State<HourlyChartsCarousel> {
             borderRadius: BorderRadius.circular(15),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),

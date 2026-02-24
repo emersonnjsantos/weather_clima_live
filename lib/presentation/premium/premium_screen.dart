@@ -4,7 +4,7 @@ import 'package:sizer/sizer.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class PremiumScreen extends StatelessWidget {
-  const PremiumScreen({Key? key}) : super(key: key);
+  const PremiumScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

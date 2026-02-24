@@ -7,9 +7,9 @@ class ArticleCardWidget extends StatelessWidget {
   final Article article;
 
   const ArticleCardWidget({
-    Key? key,
+    super.key,
     required this.article,
-  }) : super(key: key);
+  });
 
   Future<void> _launchUrl(String url) async {
     final Uri uri = Uri.parse(url);

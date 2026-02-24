@@ -9,7 +9,7 @@ import '../../services/weather_api_service.dart';
 /// Tela de Mapas de Previsão usando Windy.com Iframe
 
 class WeatherMapsScreenWebView extends StatefulWidget {
-  const WeatherMapsScreenWebView({Key? key}) : super(key: key);
+  const WeatherMapsScreenWebView({super.key});
 
   @override
   State<WeatherMapsScreenWebView> createState() =>
@@ -26,7 +26,7 @@ class _WeatherMapsScreenWebViewState extends State<WeatherMapsScreenWebView>
   // Localização (Curitiba por padrão)
   double _lat = -25.4284;
   double _lon = -49.2733;
-  int _zoom = 8;
+  final int _zoom = 8;
 
   final List<String> _mapTypes = [
     'Temperatura',
@@ -229,7 +229,7 @@ class _WeatherMapsScreenWebViewState extends State<WeatherMapsScreenWebView>
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(2.w),
-                    color: const Color(0xFF1976D2).withOpacity(0.1),
+                    color: const Color(0xFF1976D2).withValues(alpha: 0.1),
                     child: Row(
                       children: [
                         Icon(

@@ -44,7 +44,7 @@ class HourlyChartWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -179,8 +179,8 @@ class HourlyChartPreviewPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          const Color(0xFFE57373).withOpacity(0.25),
-          const Color(0xFFE57373).withOpacity(0.03),
+          const Color(0xFFE57373).withValues(alpha: 0.25),
+          const Color(0xFFE57373).withValues(alpha: 0.03),
         ],
       ).createShader(Rect.fromLTWH(0, chartTop, width, chartHeight));
 
@@ -266,7 +266,7 @@ class HourlyChartPreviewPainter extends CustomPainter {
         // Hora
         final hourPainter = TextPainter(
           text: TextSpan(
-            text: '${data[i].time.hour.toString().padLeft(2, '0')}',
+            text: data[i].time.hour.toString().padLeft(2, '0'),
             style: TextStyle(
               fontSize: 9,
               color: Colors.grey[600],

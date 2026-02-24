@@ -18,6 +18,6 @@ void main() async {
   // Salvar como PNG
   await File('assets/images/logo.png').writeAsBytes(buffer);
 
-  print('✅ Ícone PNG gerado com sucesso: assets/images/logo.png');
+  debugPrint('✅ Ícone PNG gerado com sucesso: assets/images/logo.png');
   exit(0);
 }

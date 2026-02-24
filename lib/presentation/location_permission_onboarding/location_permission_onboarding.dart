@@ -108,7 +108,7 @@ class _LocationPermissionOnboardingState
               ),
               SizedBox(height: 24),
               // Ilustração - Ícone móvel
-              Container(
+              SizedBox(
                 height: 150,
                 child: SvgPicture.asset(
                   'assets/images/mobile.svg',

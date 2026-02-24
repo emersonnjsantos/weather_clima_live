@@ -157,7 +157,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: const Color(0xFF1E88E5),
+              activeThumbColor: const Color(0xFF1E88E5),
             ),
           ],
         ),
@@ -181,8 +181,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
-        splashColor: Colors.grey.withOpacity(0.2),
-        highlightColor: Colors.grey.withOpacity(0.1),
+        splashColor: Colors.grey.withValues(alpha: 0.2),
+        highlightColor: Colors.grey.withValues(alpha: 0.1),
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
           child: Row(
@@ -376,18 +376,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildOptionTile(
       String label, String currentValue, Function(String) onSelected) {
-    final isSelected = label == currentValue;
-    return RadioListTile<String>(
-      title: Text(label),
-      value: label,
+    return RadioGroup<String>(
       groupValue: currentValue,
-      activeColor: const Color(0xFF1E88E5),
-      selected: isSelected,
       onChanged: (value) {
         if (value != null) {
           onSelected(value);
         }
       },
+      child: RadioListTile<String>(
+        title: Text(label),
+        value: label,
+        activeColor: const Color(0xFF1E88E5),
+      ),
     );
   }
 }

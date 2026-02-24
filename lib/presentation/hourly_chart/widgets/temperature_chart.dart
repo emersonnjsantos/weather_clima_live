@@ -8,10 +8,10 @@ class TemperatureChart extends StatelessWidget {
   final WeatherApiService weatherService;
 
   const TemperatureChart({
-    Key? key,
+    super.key,
     required this.hourlyForecast,
     required this.weatherService,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +40,7 @@ class TemperatureChart extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -118,9 +118,9 @@ class TemperatureChart extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 1.h),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: Column(
         children: [
@@ -138,7 +138,7 @@ class TemperatureChart extends StatelessWidget {
             style: TextStyle(
               fontSize: 13.sp,
               fontWeight: FontWeight.bold,
-              color: color.withOpacity(0.9),
+              color: color.withValues(alpha: 0.9),
             ),
           ),
         ],
@@ -184,8 +184,8 @@ class TemperatureChartPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          const Color(0xFFE57373).withOpacity(0.35),
-          const Color(0xFFE57373).withOpacity(0.05),
+          const Color(0xFFE57373).withValues(alpha: 0.35),
+          const Color(0xFFE57373).withValues(alpha: 0.05),
         ],
       ).createShader(Rect.fromLTWH(0, chartTop, width, chartHeight));
 
@@ -194,8 +194,8 @@ class TemperatureChartPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          const Color(0xFFFFAB91).withOpacity(0.2),
-          const Color(0xFFFFAB91).withOpacity(0.03),
+          const Color(0xFFFFAB91).withValues(alpha: 0.2),
+          const Color(0xFFFFAB91).withValues(alpha: 0.03),
         ],
       ).createShader(Rect.fromLTWH(0, chartTop, width, chartHeight));
 

@@ -139,13 +139,13 @@ class _IconManagerScreenState extends State<IconManagerScreen> {
                     colors: [
                       _weatherIcons[_selectedIcon]!['color'] as Color,
                       (_weatherIcons[_selectedIcon]!['color'] as Color)
-                          .withOpacity(0.7),
+                          .withValues(alpha: 0.7),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 15,
                       offset: const Offset(0, 5),
                     ),
@@ -168,7 +168,7 @@ class _IconManagerScreenState extends State<IconManagerScreen> {
                       padding: EdgeInsets.all(4.w),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                       ),
                       child: Image.network(
                         weatherService.getWeatherIconUrl(_selectedIcon,
@@ -217,7 +217,7 @@ class _IconManagerScreenState extends State<IconManagerScreen> {
                         vertical: 1.h,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
@@ -326,7 +326,7 @@ class _IconManagerScreenState extends State<IconManagerScreen> {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 2),
                             ),

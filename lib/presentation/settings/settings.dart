@@ -247,32 +247,29 @@ class _SettingsState extends State<Settings> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Temperature Unit'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile<String>(
-                title: const Text('Celsius (°C)'),
-                value: 'Celsius',
-                groupValue: _temperatureUnit,
-                onChanged: (value) {
-                  setState(() {
-                    _temperatureUnit = value!;
-                  });
-                  Navigator.pop(context);
-                },
-              ),
-              RadioListTile<String>(
-                title: const Text('Fahrenheit (°F)'),
-                value: 'Fahrenheit',
-                groupValue: _temperatureUnit,
-                onChanged: (value) {
-                  setState(() {
-                    _temperatureUnit = value!;
-                  });
-                  Navigator.pop(context);
-                },
-              ),
-            ],
+          content: RadioGroup<String>(
+            groupValue: _temperatureUnit,
+            onChanged: (value) {
+              if (value != null) {
+                setState(() {
+                  _temperatureUnit = value;
+                });
+                Navigator.pop(context);
+              }
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<String>(
+                  title: const Text('Celsius (°C)'),
+                  value: 'Celsius',
+                ),
+                RadioListTile<String>(
+                  title: const Text('Fahrenheit (°F)'),
+                  value: 'Fahrenheit',
+                ),
+              ],
+            ),
           ),
         );
       },

@@ -4,9 +4,14 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'gps_location_widget.dart';
 
-class AppDrawer extends StatelessWidget {
-  const AppDrawer({Key? key}) : super(key: key);
+class AppDrawer extends StatefulWidget {
+  const AppDrawer({super.key});
 
+  @override
+  State<AppDrawer> createState() => _AppDrawerState();
+}
+
+class _AppDrawerState extends State<AppDrawer> {
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -95,8 +100,9 @@ class AppDrawer extends StatelessWidget {
               child: GestureDetector(
                 onTap: () {
                   Navigator.pop(context);
+                  final navigator = Navigator.of(context);
                   Future.delayed(const Duration(milliseconds: 200), () {
-                    Navigator.pushNamed(context, '/premium');
+                    if (mounted) navigator.pushNamed('/premium');
                   });
                 },
                 child: Container(
@@ -181,8 +187,8 @@ class AppDrawer extends StatelessWidget {
                 onTap();
               }
             : null,
-        splashColor: Colors.grey.withOpacity(0.4),
-        highlightColor: Colors.grey.withOpacity(0.2),
+        splashColor: Colors.grey.withValues(alpha: 0.4),
+        highlightColor: Colors.grey.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
         child: ListTile(
           leading: Icon(icon, color: iconColor ?? Colors.grey[700]),

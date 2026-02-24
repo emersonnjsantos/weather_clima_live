@@ -201,7 +201,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Widget _buildWeatherLogo() {
-    return Container(
+    return SizedBox(
       width: 60.w,
       height: 60.w,
       child: Center(

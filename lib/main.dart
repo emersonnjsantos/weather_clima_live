@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sizer/sizer.dart';
 
-import 'di/service_locator.dart';
 
 import '../widgets/custom_error_widget.dart';
 import './presentation/settings/settings.dart';

@@ -110,8 +110,8 @@ class _ScopeScreenState extends State<ScopeScreen> {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
-        splashColor: Colors.grey.withOpacity(0.2),
-        highlightColor: Colors.grey.withOpacity(0.1),
+        splashColor: Colors.grey.withValues(alpha: 0.2),
+        highlightColor: Colors.grey.withValues(alpha: 0.1),
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
           child: Row(
@@ -120,7 +120,7 @@ class _ScopeScreenState extends State<ScopeScreen> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
+                  color: iconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -179,8 +179,8 @@ class _ScopeScreenState extends State<ScopeScreen> {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
-        splashColor: Colors.grey.withOpacity(0.2),
-        highlightColor: Colors.grey.withOpacity(0.1),
+        splashColor: Colors.grey.withValues(alpha: 0.2),
+        highlightColor: Colors.grey.withValues(alpha: 0.1),
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
           child: Row(
@@ -189,7 +189,7 @@ class _ScopeScreenState extends State<ScopeScreen> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
+                  color: iconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -267,26 +267,28 @@ class _ScopeScreenState extends State<ScopeScreen> {
   }
 
   Widget _buildIntervalOption(String label, double hours) {
-    final isSelected = _refreshInterval == hours;
-    return RadioListTile<double>(
-      title: Text(label),
-      value: hours,
+    return RadioGroup<double>(
       groupValue: _refreshInterval.toDouble(),
-      activeColor: const Color(0xFF1E88E5),
-      selected: isSelected,
       onChanged: (value) {
-        setState(() {
-          _refreshInterval = value!.toInt();
-        });
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Intervalo definido para $label'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        if (value != null) {
+          setState(() {
+            _refreshInterval = value.toInt();
+          });
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Intervalo definido para $label'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
       },
+      child: RadioListTile<double>(
+        title: Text(label),
+        value: hours,
+        activeColor: const Color(0xFF1E88E5),
+      ),
     );
   }
 

@@ -8,10 +8,10 @@ class WindChart extends StatelessWidget {
   final WeatherApiService weatherService;
 
   const WindChart({
-    Key? key,
+    super.key,
     required this.hourlyForecast,
     required this.weatherService,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +43,7 @@ class WindChart extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -135,9 +135,9 @@ class WindChart extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,7 +156,7 @@ class WindChart extends StatelessWidget {
             style: TextStyle(
               fontSize: 14.sp,
               fontWeight: FontWeight.bold,
-              color: color.withOpacity(0.9),
+              color: color.withValues(alpha: 0.9),
             ),
           ),
         ],
@@ -422,7 +422,7 @@ class WindChartPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     final fillPaint = Paint()
-      ..color = color.withOpacity(0.3)
+      ..color = color.withValues(alpha: 0.3)
       ..style = PaintingStyle.fill;
 
     canvas.save();
@@ -430,7 +430,7 @@ class WindChartPainter extends CustomPainter {
     canvas.rotate((degrees + 180) * 3.14159 / 180);
 
     canvas.drawCircle(
-        Offset.zero, 12, Paint()..color = Colors.white.withOpacity(0.8));
+        Offset.zero, 12, Paint()..color = Colors.white.withValues(alpha: 0.8));
 
     final path = Path();
     path.moveTo(0, -8);

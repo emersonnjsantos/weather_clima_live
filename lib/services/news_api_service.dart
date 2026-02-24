@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../models/news_model.dart';
 
@@ -22,7 +23,7 @@ class NewsApiService {
       responseHeader: false,
       responseBody: true,
       error: true,
-      logPrint: (obj) => print('[API] $obj'),
+      logPrint: (obj) => debugPrint('[API] $obj'),
     ));
   }
 

@@ -128,8 +128,8 @@ class _InformationScreenState extends State<InformationScreen> {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
-        splashColor: Colors.grey.withOpacity(0.2),
-        highlightColor: Colors.grey.withOpacity(0.1),
+        splashColor: Colors.grey.withValues(alpha: 0.2),
+        highlightColor: Colors.grey.withValues(alpha: 0.1),
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
           child: Row(

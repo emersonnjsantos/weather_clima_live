@@ -8,10 +8,10 @@ class SummaryChart extends StatelessWidget {
   final WeatherApiService weatherService;
 
   const SummaryChart({
-    Key? key,
+    super.key,
     required this.hourlyForecast,
     required this.weatherService,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +36,7 @@ class SummaryChart extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),

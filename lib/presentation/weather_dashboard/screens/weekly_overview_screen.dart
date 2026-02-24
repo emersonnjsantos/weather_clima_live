@@ -442,7 +442,7 @@ class _ExpandableForecastCard extends StatelessWidget {
 
   String? _iconUrl(String? iconCode) {
     if (iconCode == null || iconCode.isEmpty) return null;
-    return 'https://openweathermap.org/img/wn/${iconCode}@2x.png';
+    return 'https://openweathermap.org/img/wn/$iconCode@2x.png';
   }
 
   static String _capitalizeSentence(String text) {
@@ -460,7 +460,7 @@ class _ExpandableForecastCard extends StatelessWidget {
 
     return 'Hoje, ${description.toLowerCase()} ao longo do dia, '
         'com temperaturas entre ${low.round()}°C e ${high.round()}°C. '
-        'A chance de chuva é de $precip%. Ventos médios de ${wind} km/h.';
+        'A chance de chuva é de $precip%. Ventos médios de $wind km/h.';
   }
 }
 

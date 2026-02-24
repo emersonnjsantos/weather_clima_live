@@ -6,10 +6,10 @@ class AppBarSection extends StatelessWidget {
   final VoidCallback onSearchPressed;
 
   const AppBarSection({
-    Key? key,
+    super.key,
     required this.locationText,
     required this.onSearchPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -6,7 +6,7 @@ import '../../services/news_api_service.dart';
 import './widgets/article_card_widget.dart';
 
 class NewsScreen extends StatefulWidget {
-  const NewsScreen({Key? key}) : super(key: key);
+  const NewsScreen({super.key});
 
   @override
   State<NewsScreen> createState() => _NewsScreenState();

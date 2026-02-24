@@ -6,7 +6,7 @@ import 'package:geocoding/geocoding.dart';
 import '../services/weather_api_service.dart';
 
 class GpsLocationWidget extends StatefulWidget {
-  const GpsLocationWidget({Key? key}) : super(key: key);
+  const GpsLocationWidget({super.key});
 
   @override
   State<GpsLocationWidget> createState() => _GpsLocationWidgetState();
@@ -341,7 +341,7 @@ class _GpsLocationWidgetState extends State<GpsLocationWidget>
               Switch(
                 value: _isGPSEnabled,
                 onChanged: _toggleGPS,
-                activeColor: Colors.blue,
+                activeThumbColor: Colors.blue,
               ),
             ],
           ),

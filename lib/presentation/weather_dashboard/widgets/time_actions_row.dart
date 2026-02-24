@@ -6,10 +6,10 @@ class TimeActionsRow extends StatelessWidget {
   final VoidCallback? onMorePressed;
 
   const TimeActionsRow({
-    Key? key,
+    super.key,
     required this.timeText,
     this.onMorePressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class WeatherData {
   final double temperature;
   final double feelsLike;
@@ -48,29 +50,30 @@ class WeatherData {
     List<DailyWeather> dailyForecast = [];
 
     if (json.containsKey('hourly') && json['hourly'] is List) {
-      print(
+      debugPrint(
           'DEBUG: Parsing hourly forecast, count: ${(json['hourly'] as List).length}');
       try {
         hourlyForecast = (json['hourly'] as List)
             .map((item) => HourlyWeather.fromJson(item))
             .toList();
-        print(
+        debugPrint(
             'DEBUG: Successfully parsed ${hourlyForecast.length} hourly items');
       } catch (e) {
-        print('DEBUG: Error parsing hourly: $e');
+        debugPrint('DEBUG: Error parsing hourly: $e');
       }
     }
 
     if (json.containsKey('daily') && json['daily'] is List) {
-      print(
+      debugPrint(
           'DEBUG: Parsing daily forecast, count: ${(json['daily'] as List).length}');
       try {
         dailyForecast = (json['daily'] as List)
             .map((item) => DailyWeather.fromJson(item))
             .toList();
-        print('DEBUG: Successfully parsed ${dailyForecast.length} daily items');
+        debugPrint(
+            'DEBUG: Successfully parsed ${dailyForecast.length} daily items');
       } catch (e) {
-        print('DEBUG: Error parsing daily: $e');
+        debugPrint('DEBUG: Error parsing daily: $e');
       }
     }
 

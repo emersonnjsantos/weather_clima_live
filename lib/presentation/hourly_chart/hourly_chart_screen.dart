@@ -14,7 +14,7 @@ import 'widgets/wind_chart.dart';
 /// Exibe 4 abas: Resumo, Chuva, Temperatura e Vento
 /// Cada aba utiliza um widget separado para melhor organização do código
 class HourlyChartScreen extends StatefulWidget {
-  const HourlyChartScreen({Key? key}) : super(key: key);
+  const HourlyChartScreen({super.key});
 
   @override
   State<HourlyChartScreen> createState() => _HourlyChartScreenState();

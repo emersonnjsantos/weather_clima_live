@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../models/weather_models.dart';
 
@@ -37,7 +38,7 @@ class NotificationService {
 
   void _onNotificationTapped(NotificationResponse response) {
     // Trata o toque na notificação
-    print('Notification tapped: ${response.payload}');
+    debugPrint('Notification tapped: ${response.payload}');
   }
 
   Future<bool> requestPermissions() async {
