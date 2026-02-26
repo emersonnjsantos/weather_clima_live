@@ -13,16 +13,18 @@ Um aplicativo de previsão do tempo moderno baseado em Flutter que utiliza a API
 - **Notificações:** Receba alertas meteorológicos importantes.
 - **Tema Escuro e Claro:** Alterne entre os temas para uma melhor experiência de visualização.
 
-##  Telas do Aplicativo
+## 📱 Demonstração do Aplicativo
 
-| | | |
-| :---: | :---: | :---: |
-| <img src="https://i.imgur.com/example1.png" width="200"/> | <img src="https://i.imgur.com/example2.png" width="200"/> | <img src="https://i.imgur.com/example3.png" width="200"/> |
-| **Tela Inicial** | **Detalhes Diários** | **Busca de Cidades** |
-| <img src="https://i.imgur.com/example4.png" width="200"/> | <img src="https://i.imgur.com/example5.png" width="200"/> | <img src="https://i.imgur.com/example6.png" width="200"/> |
-| **Favoritos** | **Mapas Meteorológicos** | **Menu Lateral com GPS** |
+Veja abaixo as principais funcionalidades e a interface do ClimaLife em ação:
 
-*(Nota: As imagens acima são exemplos e devem ser substituídas por capturas de tela reais do seu aplicativo.)*
+| Dashboard & Tempo Real | Detalhes & Previsão |
+| :---: | :---: |
+| <img src="assets/gifs/cena1.gif" width="280"/> | <img src="assets/gifs/cena2.gif" width="280"/> |
+| **Busca & Favoritos** | **Mapas Meteorológicos** |
+| <img src="assets/gifs/cena3.gif" width="280"/> | <img src="assets/gifs/cena4.gif" width="280"/> |
+
+---
+
 
 ##  Pré-requisitos
 
