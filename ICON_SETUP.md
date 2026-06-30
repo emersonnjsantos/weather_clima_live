@@ -1,9 +1,9 @@
-# 🎨 Como Gerar o Ícone do Aplicativo
+#  Como Gerar o Ícone do Aplicativo
 
 ## Situação Atual
 O arquivo `logo.svg` está em `assets/images/logo.svg`, mas as ferramentas de geração de ícones (flutter_launcher_icons e icons_launcher) **não suportam arquivos SVG diretamente**. Precisamos converter para PNG.
 
-## ✅ Solução Rápida (Recomendada)
+##  Solução Rápida (Recomendada)
 
 ### Passo 1: Converter SVG para PNG
 
@@ -50,15 +50,15 @@ Execute o app no seu celular:
 flutter run
 ```
 
-O novo ícone aparecerá na tela inicial do celular! 📱✨
+O novo ícone aparecerá na tela inicial do celular!
 
-## 📋 Arquivos Configurados
+##  Arquivos Configurados
 
-- ✅ `icons_launcher.yaml` - Arquivo de configuração criado
-- ✅ `pubspec.yaml` - Pacote `icons_launcher` adicionado
-- ⏳ `assets/images/logo.png` - **VOCÊ PRECISA CRIAR ESTE ARQUIVO**
+-  `icons_launcher.yaml` - Arquivo de configuração criado
+-  `pubspec.yaml` - Pacote `icons_launcher` adicionado
+-  `assets/images/logo.png` - **VOCÊ PRECISA CRIAR ESTE ARQUIVO**
 
-## 🎨 Detalhes do Ícone
+##  Detalhes do Ícone
 
 O logo.svg contém:
 - Fundo com gradiente azul (#0BD1FF → #1587FF)
@@ -66,7 +66,7 @@ O logo.svg contém:
 - Nuvem branca
 - Tamanho: 2500x2500px (será redimensionado para 1024x1024px)
 
-## ⚙️ Configuração Atual
+##  Configuração Atual
 
 ```yaml
 icons_launcher:
@@ -80,7 +80,7 @@ icons_launcher:
       enable: true
 ```
 
-## 🔧 Troubleshooting
+##  Troubleshooting
 
 **Problema:** Erro ao executar `icons_launcher:create`
 - **Solução:** Verifique se `logo.png` existe em `assets/images/`
@@ -93,4 +93,4 @@ icons_launcher:
 
 ---
 
-📌 **IMPORTANTE:** Após gerar o PNG, execute `flutter pub run icons_launcher:create` para aplicar as mudanças!
+ **IMPORTANTE:** Após gerar o PNG, execute `flutter pub run icons_launcher:create` para aplicar as mudanças!
